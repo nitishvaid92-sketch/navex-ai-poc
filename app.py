@@ -40,6 +40,16 @@ st.markdown("""
         border-radius: 6px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+    .trader-takeaway {
+        background-color: #f7fafc;
+        border: 1px solid #cbd5e0;
+        border-left: 4px solid #4a5568;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 15px;
+        font-size: 14px;
+        color: #2d3748;
+    }
     .signal-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -57,7 +67,7 @@ st.markdown("""
         margin-bottom: 5px;
     }
     .signal-value {
-        font-size: 16px;
+        font-size: 15px;
         color: #0a192f;
         font-weight: 700;
     }
@@ -71,11 +81,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# V0 Disclaimer Header
+# Change 5: Prominent stage disclaimer at the top
 st.markdown("""
 <div class="disclaimer-box">
-    <strong>NAVEX AI Intelligence V0 — Pre-Seed Technical Proof of Concept</strong><br>
-    Demonstrating the core intelligence pipeline using live EUR/USD market data to generate structured, AI-assisted market intelligence. This is an early technical proof-of-concept, not a production trading system or automated execution platform.
+    <strong>NAVEX AI Intelligence V0 — Pre-MVP / Pre-Revenue Proof of Concept</strong><br>
+    This demonstration validates the initial intelligence workflow. It is not a production trading system and does not represent historical trading performance.
 </div>
 """, unsafe_allow_html=True)
 
@@ -91,7 +101,6 @@ with col_head2:
 
 @st.cache_data(ttl=30)
 def fetch_market_data():
-    # Fetching 7 days of 1-hour candles to ensure 100-150 clean data points
     eurusd = yf.Ticker("EURUSD=X")
     df = eurusd.history(period="7d", interval="1h")
     if df.empty or len(df) < 50:
@@ -105,7 +114,6 @@ def fetch_market_data():
     df['SMA_20'] = df['Close'].rolling(window=20).mean()
     df['Volatility'] = df['High'] - df['Low']
     
-    # Recent High / Low over window
     recent_high = df['High'].tail(50).max()
     recent_low = df['Low'].tail(50).min()
     
@@ -123,7 +131,7 @@ client = Groq(api_key="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"
 
 def get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low):
     prompt = f"""
-    You are NAVEX AI, an institutional quantitative market analyst. 
+    You are NAVEX AI, a quantitative market analysis assistant. 
     Current EUR/USD Market State:
     - Spot Price: {price:.5f}
     - 20-period SMA: {sma20:.5f}
@@ -133,7 +141,8 @@ def get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low):
     - Candle Volatility Range: {vol:.5f}
     
     Provide a rigorous evaluation based strictly on these live numbers. Format your response clearly using these exact headings:
-    MARKET BIAS: [Bullish / Bearish / Neutral — with confidence %, e.g., Neutral — 62% confidence]
+    MARKET BIAS: [Bullish / Bearish / Neutral]
+    AI ASSESSMENT CONFIDENCE: [e.g., 62%]
     MARKET REGIME: [Trending / Ranging / Breakout / High-volatility]
     MARKET STRUCTURE: [e.g., No confirmed directional break / Higher highs / Lower lows]
     LIQUIDITY: [Low / Moderate / High]
@@ -155,7 +164,6 @@ def get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low):
 
 ai_output = get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low)
 
-# Layout: Two columns (Professional Trading Chart on left, NAVEX AI Intelligence panel on right)
 col_chart, col_ai = st.columns([1.3, 1])
 
 with col_chart:
@@ -168,7 +176,6 @@ with col_chart:
     with metric_col3:
         st.metric("50-Candle Low", f"{rec_low:.5f}")
     
-    # Plotly Candlestick Chart (Professional Trading Terminal style)
     fig = go.Figure(data=[go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -180,7 +187,6 @@ with col_chart:
         decreasing_line_color='#ef5350'
     )])
     
-    # Add 20 SMA line
     fig.add_trace(go.Scatter(
         x=df.index, 
         y=df['SMA_20'], 
@@ -207,13 +213,22 @@ with col_ai:
     </div>
     """, unsafe_allow_html=True)
     
+    # Change 2: Add "Why this matters to a trader" output (NAVEX Trader Takeaway)
+    st.markdown("""
+    <div class="trader-takeaway">
+        <strong>NAVEX Trader Takeaway</strong><br>
+        No high-conviction setup detected. NAVEX recommends waiting for confirmation rather than forcing a trade.<br><br>
+        <strong>Bias:</strong> Neutral &nbsp;|&nbsp; <strong>Action:</strong> Wait &nbsp;|&nbsp; <strong>Trigger:</strong> Confirmed directional break + momentum expansion &nbsp;|&nbsp; <strong>Risk:</strong> Low–Moderate
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.write("")
     if st.button("Refresh Market Intelligence Stream", use_container_width=True):
         st.rerun()
 
 st.markdown("---")
 
-# "What NAVEX Is Seeing" Intelligence Layer Section
+# What NAVEX Is Seeing Section
 st.subheader("What NAVEX Is Seeing — Intelligence Signals")
 sig_col1, sig_col2, sig_col3, sig_col4, sig_col5 = st.columns(5)
 
@@ -221,40 +236,46 @@ with sig_col1:
     st.markdown("""
     <div class="signal-card">
         <div class="signal-title">Market Structure</div>
-        <div class="signal-value" style="font-size: 14px;">Range / Compression</div>
+        <div class="signal-value">Range / Compression</div>
     </div>
     """, unsafe_allow_html=True)
 with sig_col2:
     st.markdown("""
     <div class="signal-card">
         <div class="signal-title">Liquidity</div>
-        <div class="signal-value" style="font-size: 14px;">Moderate Concentration</div>
+        <div class="signal-value">Moderate Level</div>
     </div>
     """, unsafe_allow_html=True)
 with sig_col3:
     st.markdown("""
     <div class="signal-card">
         <div class="signal-title">Volatility</div>
-        <div class="signal-value" style="font-size: 14px;">Low / Compressed</div>
+        <div class="signal-value">Compressed</div>
     </div>
     """, unsafe_allow_html=True)
 with sig_col4:
     st.markdown("""
     <div class="signal-card">
         <div class="signal-title">Momentum</div>
-        <div class="signal-value" style="font-size: 14px;">Weak / Neutral</div>
+        <div class="signal-value">Weak / Neutral</div>
     </div>
     """, unsafe_allow_html=True)
 with sig_col5:
     st.markdown("""
     <div class="signal-card">
         <div class="signal-title">Risk Environment</div>
-        <div class="signal-value" style="font-size: 14px; color: #2b6cb0;">Low–Moderate</div>
+        <div class="signal-value" style="color: #2b6cb0;">Low–Moderate</div>
     </div>
     """, unsafe_allow_html=True)
 
 st.write("")
-st.markdown("*Note: These multi-input signals are synthesized dynamically by the intelligence engine before generating quantitative reasoning.*")
+# Change 3: Add "Inputs considered"
+st.markdown("""
+<div style="font-size: 13px; color: #4a5568; background-color: #fff; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 4px;">
+    <strong>Intelligence Inputs Considered:</strong> Price Action | Market Structure | Liquidity | Volatility | Momentum<br>
+    <strong>Future Roadmap Inputs:</strong> Macro | News | Sentiment | Trader Behaviour
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -277,14 +298,14 @@ with st.expander("🔍 Core NAVEX Technical Pipeline & Architecture", expanded=F
     AI REASONING & MARKET INTELLIGENCE
     ```
     
-    **Scope Boundary:**  
+    <strong>Scope Boundary:</strong>  
     V0 demonstrates the core intelligence pipeline. Brokerage execution, portfolio management, automated trading and other production capabilities are intentionally outside the scope of this proof-of-concept.
-    """)
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# From V0 to NAVEX Platform Section
-st.subheader("From V0 to NAVEX Platform")
+# Change 4: Change “PRE-SEED BUILD” to “WHAT PRE-SEED CAPITAL BUILDS”
+st.subheader("What Pre-Seed Capital Builds")
 plat_col1, plat_col2, plat_col3 = st.columns(3)
 
 with plat_col1:
@@ -303,11 +324,12 @@ with plat_col1:
 with plat_col2:
     st.markdown("""
     <div class="platform-card">
-        <h4 style="color: #0a192f; margin-top:0;">PRE-SEED BUILD</h4>
+        <h4 style="color: #0a192f; margin-top:0;">1. Expand Intelligence</h4>
         <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
-            <li><strong>Multi-asset intelligence:</strong> FX, Gold, Indices, Equities, Crypto</li>
-            <li><strong>Deeper intelligence:</strong> Structure, liquidity, macro, news, sentiment</li>
-            <li><strong>Validation:</strong> Historical backtesting & trader beta feedback</li>
+            <li>Multi-asset coverage (FX, Gold, Indices, Equities, Crypto)</li>
+            <li>Liquidity & market structure mapping</li>
+            <li>Macro & news integration</li>
+            <li>Sentiment & behavioural signals</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -315,18 +337,17 @@ with plat_col2:
 with plat_col3:
     st.markdown("""
     <div class="platform-card">
-        <h4 style="color: #0a192f; margin-top:0;">NAVEX Platform</h4>
+        <h4 style="color: #0a192f; margin-top:0;">2. Validate & 3. Build Platform</h4>
         <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
-            <li>AI trading intelligence & advanced charting</li>
-            <li>Trade planning, journaling & portfolio risk</li>
-            <li>Integrated broker infrastructure</li>
+            <li><strong>Validate:</strong> Historical testing, model evaluation, trader beta loops</li>
+            <li><strong>Platform:</strong> Advanced charting, AI trading intelligence, trade planning, journaling, portfolio risk & broker integration</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Why This Matters (Investor Statement)
+# Why This Matters
 st.subheader("Why This Matters")
 st.markdown("""
 <div style="background-color: #ebf8ff; border-left: 4px solid #3182ce; padding: 16px 20px; border-radius: 4px; color: #2b6cb0; font-size: 15px;">
