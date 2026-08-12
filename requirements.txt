@@ -2,3 +2,4 @@ streamlit
 yfinance
 groq
 plotly
+pandas
