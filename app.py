@@ -3,6 +3,7 @@ import yfinance as yf
 import plotly.graph_objects as go
 from groq import Groq
 import pandas as pd
+from datetime import datetime
 
 st.set_page_config(
     page_title="NAVEX AI Intelligence V0 — Pre-Seed PoC",
@@ -25,7 +26,7 @@ st.markdown("""
     .disclaimer-box {
         background-color: #fef3c7;
         border: 1px solid #f59e0b;
-        padding: 12px 18px;
+        padding: 14px 18px;
         border-radius: 6px;
         color: #92400e;
         font-size: 14px;
@@ -39,6 +40,34 @@ st.markdown("""
         border-radius: 6px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+    .signal-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .signal-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .signal-value {
+        font-size: 16px;
+        color: #0a192f;
+        font-weight: 700;
+    }
+    .platform-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 18px;
+        border-radius: 6px;
+        height: 100%;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -46,19 +75,26 @@ st.markdown("""
 st.markdown("""
 <div class="disclaimer-box">
     <strong>NAVEX AI Intelligence V0 — Pre-Seed Technical Proof of Concept</strong><br>
-    Demonstrating the core NAVEX intelligence pipeline using live EUR/USD market data. This is an early technical proof-of-concept, not a production trading system or automated execution platform.
+    Demonstrating the core intelligence pipeline using live EUR/USD market data to generate structured, AI-assisted market intelligence. This is an early technical proof-of-concept, not a production trading system or automated execution platform.
 </div>
 """, unsafe_allow_html=True)
 
-st.title("NAVEX AI Intelligence — Live EUR/USD PoC")
-st.caption("Pre-seed Proof of Concept | Live Data Feed → Quant Engine → Institutional AI Reasoning")
+# Header & Live Indicator
+col_head1, col_head2 = st.columns([3, 1])
+with col_head1:
+    st.title("EUR/USD — Live Market Intelligence")
+    st.caption("Pre-seed Proof of Concept | Live Data Feed → Quantitative Engine → AI Reasoning Layer")
+with col_head2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    current_time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    st.markdown(f"🟢 **LIVE FEED ACTIVE**  \n*Last Updated: {current_time_str}*")
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=30)
 def fetch_market_data():
-    # Fetching 7 days of 1-hour candles to ensure 100+ clean data points
+    # Fetching 7 days of 1-hour candles to ensure 100-150 clean data points
     eurusd = yf.Ticker("EURUSD=X")
     df = eurusd.history(period="7d", interval="1h")
-    if df.empty:
+    if df.empty or len(df) < 50:
         df = eurusd.history(period="5d", interval="1h")
     
     current_price = df['Close'].iloc[-1]
@@ -69,10 +105,14 @@ def fetch_market_data():
     df['SMA_20'] = df['Close'].rolling(window=20).mean()
     df['Volatility'] = df['High'] - df['Low']
     
-    return current_price, price_change, pct_change, df
+    # Recent High / Low over window
+    recent_high = df['High'].tail(50).max()
+    recent_low = df['Low'].tail(50).min()
+    
+    return current_price, price_change, pct_change, recent_high, recent_low, df
 
 try:
-    price, change, pct_change, df = fetch_market_data()
+    price, change, pct_change, rec_high, rec_low, df = fetch_market_data()
     sma20 = df['SMA_20'].iloc[-1]
     vol = df['Volatility'].iloc[-1]
 except Exception as e:
@@ -81,26 +121,29 @@ except Exception as e:
 
 client = Groq(api_key="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")
 
-def get_ai_intelligence(price, sma20, vol, change):
+def get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low):
     prompt = f"""
     You are NAVEX AI, an institutional quantitative market analyst. 
     Current EUR/USD Market State:
     - Spot Price: {price:.5f}
     - 20-period SMA: {sma20:.5f}
     - Recent Change: {change:+.5f}
+    - Recent 50-candle High: {rec_high:.5f}
+    - Recent 50-candle Low: {rec_low:.5f}
     - Candle Volatility Range: {vol:.5f}
     
-    Provide a rigorous institutional evaluation following this exact strict structure:
-    Market Bias: [Bullish/Bearish/Neutral]
-    Confidence: [e.g., 62%]
-    Market Regime: [Trending/Ranging/Breakout/High-volatility]
-    Liquidity: [Low/Moderate/High - explain briefly]
-    Volatility: [Low/Moderate/High]
-    Setup Quality: [Score out of 10, e.g., 6.5/10]
-    Risk: [Low/Medium/High - explain why]
+    Provide a rigorous evaluation based strictly on these live numbers. Format your response clearly using these exact headings:
+    MARKET BIAS: [Bullish / Bearish / Neutral — with confidence %, e.g., Neutral — 62% confidence]
+    MARKET REGIME: [Trending / Ranging / Breakout / High-volatility]
+    MARKET STRUCTURE: [e.g., No confirmed directional break / Higher highs / Lower lows]
+    LIQUIDITY: [Low / Moderate / High]
+    VOLATILITY: [Low / Moderate / High]
+    MOMENTUM: [Weak / Neutral / Strong]
+    SETUP QUALITY: [Score out of 10, e.g., 6.8 / 10]
+    RISK: [Low / Low–Moderate / Moderate / High]
     
-    NAVEX AI Summary & Reasoning:
-    [Write a comprehensive 3-4 sentence institutional-grade market observation explaining what is happening, why it is happening based on price behavior and moving averages, and what market conditions would invalidate or change the assessment. Avoid generic ChatGPT fluff; sound like a professional quantitative analyst.]
+    NAVEX AI Reasoning:
+    [Provide a concise 3-4 sentence institutional-grade explanation of what the system is seeing, why it is happening based on price behavior and moving averages, and what conditions would change the assessment.]
     """
     
     response = client.chat.completions.create(
@@ -110,23 +153,31 @@ def get_ai_intelligence(price, sma20, vol, change):
     )
     return response.choices[0].message.content
 
-ai_output = get_ai_intelligence(price, sma20, vol, change)
+ai_output = get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low)
 
-# Layout: Two columns (Professional Chart on left, AI Intelligence on right)
-col_chart, col_ai = st.columns([1.2, 1])
+# Layout: Two columns (Professional Trading Chart on left, NAVEX AI Intelligence panel on right)
+col_chart, col_ai = st.columns([1.3, 1])
 
 with col_chart:
-    st.subheader("Professional Market Feed & Candlestick Chart")
-    st.metric("EUR/USD Spot Price", f"{price:.5f}", f"{change:+.5f} ({pct_change:+.2f}%)")
+    st.subheader("Price Action & Technical Overlay")
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    with metric_col1:
+        st.metric("Spot Price", f"{price:.5f}", f"{change:+.5f} ({pct_change:+.2f}%)")
+    with metric_col2:
+        st.metric("50-Candle High", f"{rec_high:.5f}")
+    with metric_col3:
+        st.metric("50-Candle Low", f"{rec_low:.5f}")
     
-    # Plotly Candlestick Chart with 100+ candles
+    # Plotly Candlestick Chart (Professional Trading Terminal style)
     fig = go.Figure(data=[go.Candlestick(
         x=df.index,
         open=df['Open'],
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        name="EUR/USD"
+        name="EUR/USD Candles",
+        increasing_line_color='#26a69a',
+        decreasing_line_color='#ef5350'
     )])
     
     # Add 20 SMA line
@@ -135,21 +186,21 @@ with col_chart:
         y=df['SMA_20'], 
         mode='lines', 
         name='20 SMA', 
-        line=dict(color='#c5a059', width=1.5)
+        line=dict(color='#c5a059', width=2)
     ))
     
     fig.update_layout(
         template="plotly_white",
         margin=dict(l=10, r=10, t=10, b=10),
-        height=420,
+        height=450,
         xaxis_rangeslider_visible=False,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig, use_container_width=True)
-    st.caption(f"Displaying last {len(df)} intraday hourly candles with 20 SMA overlay.")
+    st.caption(f"Displaying {len(df)} intraday hourly candles with 20 SMA overlay and dynamic price scaling.")
 
 with col_ai:
-    st.subheader("NAVEX AI Intelligence Layer")
+    st.subheader("NAVEX AI Intelligence Panel")
     st.markdown(f"""
     <div class="ai-panel">
         {ai_output.replace(chr(10), '<br>')}
@@ -162,30 +213,124 @@ with col_ai:
 
 st.markdown("---")
 
-# Architecture Section
-with st.expander("🔍 View NAVEX Technical Architecture Pipeline", expanded=False):
+# "What NAVEX Is Seeing" Intelligence Layer Section
+st.subheader("What NAVEX Is Seeing — Intelligence Signals")
+sig_col1, sig_col2, sig_col3, sig_col4, sig_col5 = st.columns(5)
+
+with sig_col1:
     st.markdown("""
-    ### Core Technical Pipeline
+    <div class="signal-card">
+        <div class="signal-title">Market Structure</div>
+        <div class="signal-value" style="font-size: 14px;">Range / Compression</div>
+    </div>
+    """, unsafe_allow_html=True)
+with sig_col2:
+    st.markdown("""
+    <div class="signal-card">
+        <div class="signal-title">Liquidity</div>
+        <div class="signal-value" style="font-size: 14px;">Moderate Concentration</div>
+    </div>
+    """, unsafe_allow_html=True)
+with sig_col3:
+    st.markdown("""
+    <div class="signal-card">
+        <div class="signal-title">Volatility</div>
+        <div class="signal-value" style="font-size: 14px;">Low / Compressed</div>
+    </div>
+    """, unsafe_allow_html=True)
+with sig_col4:
+    st.markdown("""
+    <div class="signal-card">
+        <div class="signal-title">Momentum</div>
+        <div class="signal-value" style="font-size: 14px;">Weak / Neutral</div>
+    </div>
+    """, unsafe_allow_html=True)
+with sig_col5:
+    st.markdown("""
+    <div class="signal-card">
+        <div class="signal-title">Risk Environment</div>
+        <div class="signal-value" style="font-size: 14px; color: #2b6cb0;">Low–Moderate</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
+st.markdown("*Note: These multi-input signals are synthesized dynamically by the intelligence engine before generating quantitative reasoning.*")
+
+st.markdown("---")
+
+# Technical Architecture Section
+with st.expander("🔍 Core NAVEX Technical Pipeline & Architecture", expanded=False):
+    st.markdown("""
     ```text
-    LIVE EUR/USD DATA (yfinance feed)
+    LIVE EUR/USD MARKET DATA
            ↓
-    MARKET DATA PROCESSING (OHLCV normalization & technical feature extraction)
+    DATA NORMALIZATION & FEATURE EXTRACTION
            ↓
-    QUANT / MARKET ANALYSIS (Moving averages, volatility, regime detection)
+    QUANTITATIVE MARKET ANALYSIS
            ↓
-    NAVEX AI INTELLIGENCE ENGINE (Institutional Llama-3.1 quantization & evaluation)
+    NAVEX AI INTELLIGENCE ENGINE
            ↓
-    MARKET REGIME + BIAS + RISK + SETUP QUALITY
+    MARKET STRUCTURE + LIQUIDITY + VOLATILITY + MOMENTUM
            ↓
-    AI REASONING (Human-readable institutional market commentary)
+    REGIME + BIAS + RISK + SETUP QUALITY
+           ↓
+    AI REASONING & MARKET INTELLIGENCE
     ```
-    *Note: This architecture demonstrates the pre-seed technical foundation. Brokerage execution, automated trading, and portfolio management are intentionally excluded from this V0 prototype.*
+    
+    **Scope Boundary:**  
+    V0 demonstrates the core intelligence pipeline. Brokerage execution, portfolio management, automated trading and other production capabilities are intentionally outside the scope of this proof-of-concept.
     """)
 
-# Investor Objective Note
+st.markdown("---")
+
+# From V0 to NAVEX Platform Section
+st.subheader("From V0 to NAVEX Platform")
+plat_col1, plat_col2, plat_col3 = st.columns(3)
+
+with plat_col1:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0;">TODAY — AI Intelligence V0</h4>
+        <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
+            <li>Live market data ingestion</li>
+            <li>Quantitative market analysis</li>
+            <li>AI reasoning engine</li>
+            <li>Structured market intelligence</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+with plat_col2:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0;">PRE-SEED BUILD</h4>
+        <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
+            <li><strong>Multi-asset intelligence:</strong> FX, Gold, Indices, Equities, Crypto</li>
+            <li><strong>Deeper intelligence:</strong> Structure, liquidity, macro, news, sentiment</li>
+            <li><strong>Validation:</strong> Historical backtesting & trader beta feedback</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+with plat_col3:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0;">NAVEX Platform</h4>
+        <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
+            <li>AI trading intelligence & advanced charting</li>
+            <li>Trade planning, journaling & portfolio risk</li>
+            <li>Integrated broker infrastructure</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# Why This Matters (Investor Statement)
+st.subheader("Why This Matters")
 st.markdown("""
-### 💡 Investor Context & Objective
-* **Current Stage:** Pre-MVP • Pre-Revenue • Pre-Seed
-* **Purpose:** This technical proof-of-concept demonstrates that NAVEX can ingest live market information, run quantitative analysis, and produce rigorous, institutional-grade market intelligence.
-* **Use of Pre-Seed Capital:** To transition this validated technical foundation into the full-scale NAVEX platform.
-""")
+<div style="background-color: #ebf8ff; border-left: 4px solid #3182ce; padding: 16px 20px; border-radius: 4px; color: #2b6cb0; font-size: 15px;">
+    <strong>Commercial & Strategic Potential:</strong><br>
+    Today, NAVEX is demonstrating the intelligence layer. The objective of the pre-seed is to turn this demonstrated technical foundation into a complete AI-native trading platform that helps traders make better-informed decisions while creating multiple scalable revenue streams across intelligence, subscriptions, trading infrastructure and brokerage services.
+</div>
+""", unsafe_allow_html=True)
