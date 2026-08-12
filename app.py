@@ -74,38 +74,53 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Top Navigation Bar simulation
+# Cleaned Top Navigation Bar (Removed LaTeX formatting)
 st.markdown("""
 <div class="topnav">
     <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 20px; font-weight: 800; color: #f59e0b; letter-spacing: 1px;">N $\mathbf{N}$</span>
+        <span style="font-size: 20px; font-weight: 900; color: #f59e0b; letter-spacing: 1px;">N</span>
         <span style="font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px;">NAVEX CAPITAL</span>
         <span style="color: #4b5563; margin: 0 10px;">|</span>
-        <span style="color: #60a5fa; font-size: 14px; font-weight: 600; cursor: pointer;">Overview</span>
-        <span style="color: #9ca3af; font-size: 14px; cursor: pointer;">Markets</span>
-        <span style="color: #9ca3af; font-size: 14px; cursor: pointer;">AI Insights</span>
-        <span style="color: #9ca3af; font-size: 14px; cursor: pointer;">News</span>
-        <span style="color: #9ca3af; font-size: 14px; cursor: pointer;">Alerts</span>
-        <span style="color: #9ca3af; font-size: 14px; cursor: pointer;">Watchlist</span>
+        <span style="color: #60a5fa; font-size: 14px; font-weight: 600;">Overview</span>
+        <span style="color: #9ca3af; font-size: 14px;">Markets</span>
+        <span style="color: #9ca3af; font-size: 14px;">AI Insights</span>
+        <span style="color: #9ca3af; font-size: 14px;">News</span>
+        <span style="color: #9ca3af; font-size: 14px;">Alerts</span>
+        <span style="color: #9ca3af; font-size: 14px;">Watchlist</span>
     </div>
-    <div style="color: #9ca3af; font-size: 14px;">
+    <div style="color: #34d399; font-size: 14px; font-weight: 600;">
         🟢 Live Feed Active
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Fetch Live Gold Data (GC=X represents Gold Spot)
+# Fetch Live Gold Data with Multiple Tickers and Fallbacks
 @st.cache_data(ttl=30)
 def fetch_gold_data():
-    gold = yf.Ticker("GC=X")
-    df = gold.history(period="7d", interval="1h")
-    if df.empty or len(df) < 30:
-        df = gold.history(period="5d", interval="1h")
+    df = pd.DataFrame()
     
-    current_price = df['Close'].iloc[-1]
-    prev_close = df['Close'].iloc[-2]
+    # Try Gold Spot first, then Gold Futures
+    for ticker in ["XAUUSD=X", "GC=X"]:
+        try:
+            gold = yf.Ticker(ticker)
+            df = gold.history(period="7d", interval="1h")
+            if not df.empty and len(df) >= 10:
+                break
+        except Exception:
+            continue
+            
+    # Fallback to daily candles if hourly is unavailable
+    if df.empty or len(df) < 2:
+        gold = yf.Ticker("GC=X")
+        df = gold.history(period="1mo", interval="1d")
+
+    if df.empty or len(df) < 2:
+        raise ValueError("Market data feed returned insufficient candles.")
+
+    current_price = float(df['Close'].iloc[-1])
+    prev_close = float(df['Close'].iloc[-2]) if len(df) >= 2 else current_price
     price_change = current_price - prev_close
-    pct_change = (price_change / prev_close) * 100
+    pct_change = (price_change / prev_close) * 100 if prev_close != 0 else 0.0
     
     df['SMA_20'] = df['Close'].rolling(window=20).mean()
     df['Volatility'] = df['High'] - df['Low']
@@ -118,7 +133,7 @@ def fetch_gold_data():
 
 try:
     price, change, pct_change, resistance, support, pivot, df = fetch_gold_data()
-    sma20 = df['SMA_20'].iloc[-1]
+    sma20 = df['SMA_20'].dropna().iloc[-1] if not df['SMA_20'].dropna().empty else price
     vol = df['Volatility'].iloc[-1]
 except Exception as e:
     st.error(f"Error connecting to live market feed: {e}")
@@ -200,7 +215,7 @@ with col_mid:
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
     
-    # Bottom sub-cards under chart (Institutional Flow & Volatility Index)
+    # Sub-cards under chart (Institutional Flow & Volatility Index)
     sub_col1, sub_col2 = st.columns(2)
     with sub_col1:
         st.markdown("""
