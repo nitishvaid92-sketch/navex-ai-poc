@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom Fintech Styling (Warm White, Deep Navy, Charcoal, Gold Accents)
+# Custom Fintech Institutional Styling
 st.markdown("""
     <style>
     .stApp {
@@ -59,7 +59,7 @@ st.markdown("""
         box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .signal-title {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: #718096;
@@ -67,7 +67,7 @@ st.markdown("""
         margin-bottom: 5px;
     }
     .signal-value {
-        font-size: 15px;
+        font-size: 14px;
         color: #0a192f;
         font-weight: 700;
     }
@@ -78,18 +78,24 @@ st.markdown("""
         border-radius: 6px;
         height: 100%;
     }
+    .validation-metric {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 20px;
+        border-radius: 6px;
+        text-align: center;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Change 5: Prominent stage disclaimer at the top
+# 1. TOP POSITIONING & STAGE DISCLAIMER
 st.markdown("""
 <div class="disclaimer-box">
     <strong>NAVEX AI Intelligence V0 — Pre-MVP / Pre-Revenue Proof of Concept</strong><br>
-    This demonstration validates the initial intelligence workflow. It is not a production trading system and does not represent historical trading performance.
+    This demonstration validates the initial NAVEX intelligence workflow. It is not a production trading system and does not represent historical trading performance.
 </div>
 """, unsafe_allow_html=True)
 
-# Header & Live Indicator
 col_head1, col_head2 = st.columns([3, 1])
 with col_head1:
     st.title("EUR/USD — Live Market Intelligence")
@@ -99,6 +105,7 @@ with col_head2:
     current_time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     st.markdown(f"🟢 **LIVE FEED ACTIVE**  \n*Last Updated: {current_time_str}*")
 
+# 2. LIVE MARKET DATA INGESTION
 @st.cache_data(ttl=30)
 def fetch_market_data():
     eurusd = yf.Ticker("EURUSD=X")
@@ -127,6 +134,7 @@ except Exception as e:
     st.error(f"Error fetching live data feed: {e}")
     st.stop()
 
+# 3 & 4. NAVEX AI INTELLIGENCE PANEL & REASONING
 client = Groq(api_key="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")
 
 def get_ai_intelligence(price, sma20, vol, change, rec_high, rec_low):
@@ -213,7 +221,7 @@ with col_ai:
     </div>
     """, unsafe_allow_html=True)
     
-    # Change 2: Add "Why this matters to a trader" output (NAVEX Trader Takeaway)
+    # 5. NAVEX TRADER TAKEAWAY
     st.markdown("""
     <div class="trader-takeaway">
         <strong>NAVEX Trader Takeaway</strong><br>
@@ -228,7 +236,7 @@ with col_ai:
 
 st.markdown("---")
 
-# What NAVEX Is Seeing Section
+# 6. INTELLIGENCE SIGNALS
 st.subheader("What NAVEX Is Seeing — Intelligence Signals")
 sig_col1, sig_col2, sig_col3, sig_col4, sig_col5 = st.columns(5)
 
@@ -269,17 +277,16 @@ with sig_col5:
     """, unsafe_allow_html=True)
 
 st.write("")
-# Change 3: Add "Inputs considered"
 st.markdown("""
 <div style="font-size: 13px; color: #4a5568; background-color: #fff; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 4px;">
     <strong>Intelligence Inputs Considered:</strong> Price Action | Market Structure | Liquidity | Volatility | Momentum<br>
-    <strong>Future Roadmap Inputs:</strong> Macro | News | Sentiment | Trader Behaviour
+    <strong>Future Intelligence Inputs:</strong> Macro | News | Sentiment | Trader Behaviour
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Technical Architecture Section
+# 7. TECHNICAL ARCHITECTURE & SCOPE BOUNDARY
 with st.expander("🔍 Core NAVEX Technical Pipeline & Architecture", expanded=False):
     st.markdown("""
     ```text
@@ -304,14 +311,56 @@ with st.expander("🔍 Core NAVEX Technical Pipeline & Architecture", expanded=F
 
 st.markdown("---")
 
-# Change 4: Change “PRE-SEED BUILD” to “WHAT PRE-SEED CAPITAL BUILDS”
-st.subheader("What Pre-Seed Capital Builds")
+# 8. INVESTOR CONTEXT & OBJECTIVE
+st.subheader("Investor Context & Objective")
+st.markdown("""
+<div style="background-color: #ffffff; border: 1px solid #e2e8f0; padding: 18px; border-radius: 6px; font-size: 14px; color: #2d3748;">
+    <strong>Current Stage:</strong> Pre-MVP • Pre-Revenue • Pre-Seed<br><br>
+    <strong>Purpose:</strong> This proof-of-concept demonstrates the initial NAVEX intelligence workflow using live market information, quantitative analysis and an AI reasoning layer.<br><br>
+    <strong>Pre-Seed Objective:</strong> Use pre-seed capital to expand, validate and productize this intelligence foundation into the NAVEX AI-native trading platform.
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
+
+# 9. EARLY TRADER VALIDATION
+st.subheader("Early Trader Validation")
+val_col1, val_col2, val_col3 = st.columns(3)
+
+with val_col1:
+    st.markdown("""
+    <div class="validation-metric">
+        <div class="signal-title">Traders Contacted</div>
+        <div style="font-size: 28px; font-weight: 700; color: #0a192f; margin-top: 5px;">173</div>
+    </div>
+    """, unsafe_allow_html=True)
+with val_col2:
+    st.markdown("""
+    <div class="validation-metric">
+        <div class="signal-title">Expressed Interest in Beta</div>
+        <div style="font-size: 28px; font-weight: 700; color: #0a192f; margin-top: 5px;">158</div>
+    </div>
+    """, unsafe_allow_html=True)
+with val_col3:
+    st.markdown("""
+    <div class="validation-metric">
+        <div class="signal-title">Average Reported Trading Capital</div>
+        <div style="font-size: 28px; font-weight: 700; color: #0a192f; margin-top: 5px;">$3,000</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div style='font-size: 13px; color: #718096; margin-top: 8px;'><em>Outreach is ongoing as NAVEX continues building its early beta cohort.</em></div>", unsafe_allow_html=True)
+
+st.markdown("---")
+
+# 10. FROM V0 TO NAVEX PLATFORM
+st.subheader("From V0 to NAVEX Platform")
 plat_col1, plat_col2, plat_col3 = st.columns(3)
 
 with plat_col1:
     st.markdown("""
     <div class="platform-card">
-        <h4 style="color: #0a192f; margin-top:0;">TODAY — AI Intelligence V0</h4>
+        <h4 style="color: #0a192f; margin-top:0;">TODAY — AI INTELLIGENCE V0</h4>
         <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
             <li>Live market data ingestion</li>
             <li>Quantitative market analysis</li>
@@ -324,12 +373,14 @@ with plat_col1:
 with plat_col2:
     st.markdown("""
     <div class="platform-card">
-        <h4 style="color: #0a192f; margin-top:0;">1. Expand Intelligence</h4>
+        <h4 style="color: #0a192f; margin-top:0;">PRE-SEED BUILD</h4>
         <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
-            <li>Multi-asset coverage (FX, Gold, Indices, Equities, Crypto)</li>
-            <li>Liquidity & market structure mapping</li>
-            <li>Macro & news integration</li>
-            <li>Sentiment & behavioural signals</li>
+            <li>Multi-asset intelligence (FX, Gold, Indices, Equities, Crypto)</li>
+            <li>Deeper market-structure and liquidity intelligence</li>
+            <li>Macro and news integration</li>
+            <li>Sentiment and behavioural signals</li>
+            <li>Historical validation / backtesting</li>
+            <li>Model evaluation & trader beta feedback</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -337,21 +388,58 @@ with plat_col2:
 with plat_col3:
     st.markdown("""
     <div class="platform-card">
-        <h4 style="color: #0a192f; margin-top:0;">2. Validate & 3. Build Platform</h4>
+        <h4 style="color: #0a192f; margin-top:0;">NAVEX PLATFORM</h4>
         <ul style="padding-left: 18px; font-size: 14px; color: #4a5568;">
-            <li><strong>Validate:</strong> Historical testing, model evaluation, trader beta loops</li>
-            <li><strong>Platform:</strong> Advanced charting, AI trading intelligence, trade planning, journaling, portfolio risk & broker integration</li>
+            <li>AI-native trading intelligence</li>
+            <li>Advanced charting & trade planning</li>
+            <li>Trading journal & portfolio risk intelligence</li>
+            <li>Broker integration & execution infrastructure</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Why This Matters
+# 11. WHAT PRE-SEED CAPITAL BUILDS
+st.subheader("What Pre-Seed Capital Builds")
+build_col1, build_col2, build_col3, build_col4 = st.columns(4)
+
+with build_col1:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0; font-size: 15px;">1. EXPAND</h4>
+        <p style="font-size: 13px; color: #4a5568;">Expand the intelligence engine from a single-asset proof-of-concept to multi-asset market intelligence.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with build_col2:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0; font-size: 15px;">2. VALIDATE</h4>
+        <p style="font-size: 13px; color: #4a5568;">Validate intelligence through historical testing, model evaluation and structured beta feedback loops.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with build_col3:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0; font-size: 15px;">3. PRODUCTIZE</h4>
+        <p style="font-size: 13px; color: #4a5568;">Turn the validated intelligence layer into the core of the NAVEX trading platform.</p>
+    </div>
+    """, unsafe_allow_html=True)
+with build_col4:
+    st.markdown("""
+    <div class="platform-card">
+        <h4 style="color: #0a192f; margin-top:0; font-size: 15px;">4. SCALE</h4>
+        <p style="font-size: 13px; color: #4a5568;">Prepare infrastructure, integrations and product experience required for broader trader adoption.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# 12. COMMERCIAL POTENTIAL / WHY THIS MATTERS
 st.subheader("Why This Matters")
 st.markdown("""
 <div style="background-color: #ebf8ff; border-left: 4px solid #3182ce; padding: 16px 20px; border-radius: 4px; color: #2b6cb0; font-size: 15px;">
     <strong>Commercial & Strategic Potential:</strong><br>
-    Today, NAVEX is demonstrating the intelligence layer. The objective of the pre-seed is to turn this demonstrated technical foundation into a complete AI-native trading platform that helps traders make better-informed decisions while creating multiple scalable revenue streams across intelligence, subscriptions, trading infrastructure and brokerage services.
+    NAVEX is demonstrating the intelligence layer today. The pre-seed objective is to turn this technical foundation into a complete AI-native trading platform that helps traders make better-informed decisions while creating multiple potential revenue streams across intelligence subscriptions, trading infrastructure and brokerage services.
 </div>
 """, unsafe_allow_html=True)
