@@ -62,7 +62,7 @@ def get_ai_intelligence(price, sma20, vol):
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3
     )
-    return response.choices.message.content
+    return response.choices[0].message.content
 
 ai_output = get_ai_intelligence(price, sma20, vol)
 
@@ -79,3 +79,4 @@ with col2:
 
 if st.button("Refresh Intelligence Stream"):
     st.rerun()
+
